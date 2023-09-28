@@ -1,0 +1,15 @@
+#!/bin/bash
+
+
+
+ffmpeg -i Jailer.mp4 -i Image1.jpg -i Image2.jpg -i background1.jpg \
+  -filter_complex " \
+  [3:v]scale=1920:1080[bg]; \
+  [0:v]scale=1280:450[bottom]; \
+  [bg][bottom]overlay=(W-w)/2.5:((H-h)/2.5)+50[bg1]; \
+  [2:v]scale=640:240[left]; \
+  [1:v]scale=640:240[right]; \
+  [bg1][left]overlay=10:800[bg2]; \
+  [bg2][right]overlay=W-w:10 " \
+  -c:v libx264 -c:a aac -b:a 192k output3.mp4
+

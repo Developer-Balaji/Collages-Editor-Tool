@@ -1,0 +1,15 @@
+#!/bin/bash
+
+export INPUT_VIDEO="/home/user/BALAJI/Merge/Multi_Language/Pathaan.mp4"
+export INPUT_IMAGE="/home/user/BALAJI/Merge/Multi_Language/Pathaan.jpg"
+export INPUT_BACKROUND="/home/user/BALAJI/Merge/Multi_Language/background.jpg"
+
+export INPUT_TEXT="पठान"  
+export TEXT_POSITION_X="1050"
+export TEXT_POSITION_Y="150"
+
+export INPUT_FONT="/home/user/BALAJI/Merge/Multi_Language/Hind-Regular.ttf"
+export FONT_SIZE="36"
+export FONT_COLOUR="0,0,0" 
+
+python3 "/home/user/BALAJI/Merge/New/single_text"

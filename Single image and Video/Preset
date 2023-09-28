@@ -1,0 +1,107 @@
+#!/usr/bin/python3
+#pip install opencv-python
+
+import subprocess
+import cv2
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+import os
+from moviepy.editor import VideoFileClip
+
+# FFMpeg command to convert input video to FFmpeg_Out.mp4
+ffmpeg_command = (
+    'ffmpeg -i $INPUT_VIDEO -i $INPUT_IMAGE -i $INPUT_BACKROUND '
+    '-filter_complex "[2:v]scale=1920:1080[bg]; '
+    '[0:v]scale=1280:720[bottom]; '
+    '[bg][bottom]overlay=(W-w)/1.0:((H-h)/1.0)+5[bg1]; '
+    '[1:v]scale=640x480[left]; '
+    '[bg1][left]overlay=5:10" '
+    '-c:v libx264 -c:a aac -b:a 192k FFmpeg_Out.mp4'
+)
+
+# Run the FFMpeg command
+subprocess.run(ffmpeg_command, shell=True)
+
+print(" ")
+print("Wait converting...")
+
+# Open the input video file
+input_file = 'FFmpeg_Out.mp4'
+
+# Get video properties (frame dimensions, frame rate, etc.)
+video_clip = VideoFileClip(input_file)
+frame_width = int(video_clip.size[0])
+frame_height = int(video_clip.size[1])
+fps = video_clip.fps
+
+# Define the codec and create a VideoWriter object for the output video (MKV)
+fourcc = cv2.VideoWriter_fourcc(*'XVID')  # Use 'XVID' codec for MKV
+output_file = 'Python_Out.mkv'
+out = cv2.VideoWriter(output_file, fourcc, fps, (frame_width, frame_height))
+
+# Text parameters
+font_path = os.environ['INPUT_FONT']
+font_size = int(os.environ['FONT_SIZE'])
+font_color_str = os.environ['FONT_COLOUR']  # Get the font color as a string
+
+# Split the font color string and convert it to an integer tuple
+font_color = tuple(map(int, font_color_str.split(',')))
+
+# Read text from the environment variable
+text = os.environ['INPUT_TEXT']
+
+# Initialize the text position
+text_position_x = int(os.environ['TEXT_POSITION_X'])  # X position for the text
+text_position_y = int(os.environ['TEXT_POSITION_Y'])  # Y position for the text
+
+# Load the font
+font = ImageFont.truetype(font_path, font_size)
+
+# Loop through each frame in the input video
+for frame in video_clip.iter_frames(fps=fps, dtype='uint8'):
+    # Convert the frame to a Pillow image
+    pil_image = Image.fromarray(frame)
+    draw = ImageDraw.Draw(pil_image)
+
+    # Add the text to the image
+    draw.text((text_position_x, text_position_y), text, font=font, fill=font_color)
+
+    # Convert the Pillow image back to an OpenCV frame
+    frame_with_text = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+
+    # Write the frame to the output video
+    out.write(frame_with_text)
+
+# Release the video object
+out.release()
+
+video_file = 'Python_Out.mkv'
+audio_file = 'FFmpeg_Out.mp4'
+
+# Final Output file
+output_file = 'Final_Out.mkv'
+
+# Run FFmpeg command to merge video and audio
+ffmpeg_command = [
+    'ffmpeg',
+    '-i', video_file,   # Input video
+    '-i', audio_file,   # Input audio
+    '-c:v', 'copy',     # Copy video codec
+    '-c:a', 'aac',      # AAC audio codec (you can change this to match the audio codec of FFmpeg_Out.mp4)
+    '-strict', 'experimental',
+    '-map', '0:v:0',    # Map video stream from input 0
+    '-map', '1:a:0',    # Map audio stream from input 1
+    '-shortest',        # Finish encoding when the shortest input stream ends
+    output_file         # Output file name
+]
+
+subprocess.run(ffmpeg_command)
+
+print("Finished ...")
+
+# Remove the intermediate files
+os.remove('Python_Out.mkv')
+os.remove('FFmpeg_Out.mp4')
+
+print("Intermediate files removed.")
+
